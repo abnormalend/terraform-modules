@@ -1,10 +1,41 @@
 locals {
   lambda_name = var.name_prefix != null ? "${var.name_prefix}-${var.function_name}" : var.function_name
+  
+  # Handle source directory packaging if provided
+  create_package = var.source_dir != null
+  dist_dir = "${path.module}/dist"
+  filename = local.create_package ? "${local.dist_dir}/${local.lambda_name}.zip" : var.filename
+}
+
+# Ensure dist directory exists
+resource "local_file" "ensure_dist_dir" {
+  count    = local.create_package ? 1 : 0
+  content  = "Created by Terraform to ensure directory exists"
+  filename = "${local.dist_dir}/.keep"
+
+  lifecycle {
+    ignore_changes = [content]
+  }
+}
+
+# Create package from source directory if provided
+data "archive_file" "lambda_package" {
+  count       = local.create_package ? 1 : 0
+  type        = "zip"
+  source_dir  = var.source_dir
+  output_path = local.filename
+  
+  depends_on = [local_file.ensure_dist_dir]
+}
+
+# Validate that either source_dir or both filename and source_code_hash are provided
+locals {
+  validation_error = (var.source_dir == null && (var.filename == null || var.source_code_hash == null)) ? file("ERROR: Must provide either source_dir or both filename and source_code_hash") : null
 }
 
 resource "aws_lambda_function" "function" {
-  filename         = var.filename
-  source_code_hash = var.source_code_hash
+  filename         = local.filename
+  source_code_hash = local.create_package ? data.archive_file.lambda_package[0].output_base64sha256 : var.source_code_hash
   function_name    = local.lambda_name
   role            = aws_iam_role.lambda_role.arn
   handler         = var.handler

@@ -9,14 +9,22 @@ variable "name_prefix" {
   default     = null
 }
 
-variable "filename" {
-  description = "Path to the function's deployment package within the local filesystem"
+variable "source_dir" {
+  description = "Directory containing Lambda function code. If provided, filename and source_code_hash will be generated automatically."
   type        = string
+  default     = null
+}
+
+variable "filename" {
+  description = "Path to the function's deployment package within the local filesystem. Required if source_dir is not provided."
+  type        = string
+  default     = null
 }
 
 variable "source_code_hash" {
-  description = "Base64-encoded SHA256 hash of the package file"
+  description = "Base64-encoded SHA256 hash of the package file. Required if source_dir is not provided."
   type        = string
+  default     = null
 }
 
 variable "handler" {
