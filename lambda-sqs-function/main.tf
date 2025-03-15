@@ -36,6 +36,7 @@ module "lambda_function" {
   source_code_hash     = var.source_code_hash
   memory_size          = var.memory_size
   timeout              = var.timeout
+  reserved_concurrent_executions = var.reserved_concurrent_executions
   environment_variables = merge(
     var.environment_variables,
     {

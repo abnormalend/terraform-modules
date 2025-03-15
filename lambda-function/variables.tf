@@ -95,3 +95,9 @@ variable "additional_policy_statements" {
   type        = list(any)
   default     = []
 }
+
+variable "reserved_concurrent_executions" {
+  description = "Number of concurrent executions reserved for the Lambda function"
+  type        = number
+  default     = 5
+}

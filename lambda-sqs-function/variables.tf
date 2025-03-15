@@ -131,3 +131,9 @@ variable "additional_queue_tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "reserved_concurrent_executions" {
+  description = "Number of concurrent executions reserved for the Lambda function"
+  type        = number
+  default     = 5
+}
