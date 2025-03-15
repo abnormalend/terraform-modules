@@ -74,15 +74,14 @@ resource "aws_lambda_event_source_mapping" "sqs_trigger" {
   maximum_batching_window_in_seconds = var.maximum_batching_window_in_seconds
 }
 
+# IAM policy for the processor Lambda to receive and process messages
 data "aws_iam_policy_document" "sqs_policy" {
   statement {
     effect = "Allow"
     actions = [
       "sqs:ReceiveMessage",
       "sqs:DeleteMessage",
-      "sqs:GetQueueAttributes",
-      "sqs:SendMessage",
-      "sqs:GetQueueUrl"
+      "sqs:GetQueueAttributes"
     ]
     resources = concat(
       [aws_sqs_queue.queue.arn],
