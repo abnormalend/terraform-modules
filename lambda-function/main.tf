@@ -43,6 +43,7 @@ resource "aws_lambda_function" "function" {
   timeout         = var.timeout
   memory_size     = var.memory_size
   reserved_concurrent_executions = var.reserved_concurrent_executions
+  layers          = var.layers
   
   dynamic "environment" {
     for_each = length(var.environment_variables) > 0 ? [1] : []
@@ -58,14 +59,6 @@ resource "aws_lambda_function" "function" {
       security_group_ids = vpc_config.value.security_group_ids
     }
   }
-
-  dynamic "layers" {
-    for_each = var.layers
-    content {
-      layers = layers.value
-    }
-  }
-
 
   tags = merge(
     var.tags,
