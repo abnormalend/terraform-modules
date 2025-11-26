@@ -12,6 +12,7 @@ This Terraform module creates a fully featured AWS Lambda function with associat
 - Additional IAM policy attachment support
 - Customizable naming with optional prefix
 - Resource tagging
+- ARM64 architecture support
 
 ## Usage
 
@@ -23,7 +24,10 @@ module "lambda_function" {
   filename         = "function.zip"
   source_code_hash = filebase64sha256("function.zip")
   handler         = "index.handler"
-  runtime         = "nodejs18.x"
+  runtime         = "python3.11"
+  
+  # ARM64 architecture for cost optimization
+  architectures   = ["arm64"]
   
   # Optional configurations
   timeout         = 30
@@ -69,18 +73,25 @@ module "lambda_function" {
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|----------|
 | function_name | Name of the Lambda function | string | - | yes |
-| filename | Path to the function's deployment package | string | - | yes |
-| source_code_hash | Base64-encoded SHA256 hash of the package file | string | - | yes |
-| handler | Function entrypoint in your code | string | - | yes |
-| runtime | Lambda function runtime | string | - | yes |
+| filename | Path to the function's deployment package | string | - | yes* |
+| source_code_hash | Base64-encoded SHA256 hash of the package file | string | - | yes* |
+| handler | Function entrypoint in your code | string | index.handler | no |
+| runtime | Lambda function runtime | string | python3.9 | no |
+| architectures | Instruction set architecture for the Lambda function | list(string) | ["x86_64"] | no |
 | name_prefix | Optional prefix for the Lambda function name | string | null | no |
-| timeout | Amount of time your Lambda Function has to run in seconds | number | 3 | no |
+| timeout | Amount of time your Lambda Function has to run in seconds | number | 30 | no |
 | memory_size | Amount of memory in MB your Lambda Function can use | number | 128 | no |
+| reserved_concurrent_executions | Number of concurrent executions reserved | number | 5 | no |
 | environment_variables | Map of environment variables | map(string) | {} | no |
 | vpc_config | VPC configuration for the Lambda function | object | null | no |
 | log_retention_days | Number of days to retain Lambda logs | number | 14 | no |
 | tags | Tags to attach to resources | map(string) | {} | no |
 | additional_policy_statements | Additional IAM policy statements | list(any) | [] | no |
+| managed_policies | List of managed policies to attach | list(string) | [] | no |
+| layers | List of layers to attach to the Lambda function | list(string) | [] | no |
+| source_dir | Directory containing Lambda function code | string | null | no |
+
+*Either `source_dir` or both `filename` and `source_code_hash` must be provided.
 
 ## Outputs
 

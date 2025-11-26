@@ -101,3 +101,15 @@ variable "reserved_concurrent_executions" {
   type        = number
   default     = 5
 }
+
+variable "architectures" {
+  description = "Instruction set architecture for the Lambda function (x86_64 or arm64)"
+  type        = list(string)
+  default     = ["x86_64"]
+  validation {
+    condition = alltrue([
+      for arch in var.architectures : contains(["x86_64", "arm64"], arch)
+    ])
+    error_message = "Architectures must be either 'x86_64' or 'arm64'."
+  }
+}

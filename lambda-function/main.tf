@@ -30,7 +30,17 @@ data "archive_file" "lambda_package" {
 
 # Validate that either source_dir or both filename and source_code_hash are provided
 locals {
-  validation_error = (var.source_dir == null && (var.filename == null || var.source_code_hash == null)) ? file("ERROR: Must provide either source_dir or both filename and source_code_hash") : null
+  source_validation = (
+    (var.source_dir != null) ||
+    (var.filename != null && var.source_code_hash != null)
+  )
+  source_validation_message = (
+    var.source_dir != null ?
+    "Using source_dir for packaging" :
+    (var.filename != null && var.source_code_hash != null ?
+     "Using provided filename and source_code_hash" :
+     "ERROR: Must provide either source_dir or both filename and source_code_hash")
+  )
 }
 
 resource "aws_lambda_function" "function" {
@@ -40,6 +50,7 @@ resource "aws_lambda_function" "function" {
   role            = aws_iam_role.lambda_role.arn
   handler         = var.handler
   runtime         = var.runtime
+  architectures   = var.architectures
   timeout         = var.timeout
   memory_size     = var.memory_size
   reserved_concurrent_executions = var.reserved_concurrent_executions
@@ -59,6 +70,7 @@ resource "aws_lambda_function" "function" {
       security_group_ids = vpc_config.value.security_group_ids
     }
   }
+
 
   tags = merge(
     var.tags,
