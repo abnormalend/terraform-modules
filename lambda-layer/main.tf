@@ -13,7 +13,7 @@ resource "aws_lambda_layer_version" "layer" {
   layer_name               = local.layer_name
   compatible_runtimes      = var.compatible_runtimes
   compatible_architectures = var.architectures
-  filename                 = "${path.module}/layer.zip"
+  filename                 = "/Users/brent/code/terraform-modules/lambda-layer/layer.zip"
   source_code_hash         = "layer-v1"
 
   description  = var.description != "" ? var.description : "Python dependencies layer"
