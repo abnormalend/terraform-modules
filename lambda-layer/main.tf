@@ -22,17 +22,12 @@ resource "null_resource" "create_layer" {
   }
 
   provisioner "local-exec" {
+    working_dir = "${path.module}"
     command = <<-EOT
       set -e  # Exit on any error
       set -x  # Debug mode
 
-      echo "Current working directory: $(pwd)"
-      echo "Path module: ${path.module}"
-
-      # Change to the module directory
-      cd ${path.module}
-
-      echo "Changed to directory: $(pwd)"
+      echo "Working directory: $(pwd)"
 
       # Clean up and recreate python directory
       rm -rf python layer.zip
@@ -40,21 +35,9 @@ resource "null_resource" "create_layer" {
 
       echo "Installing Python packages..."
 
-      # Try multiple approaches for pip installation
-      if command -v pip3 >/dev/null 2>&1; then
-        PIP_CMD="pip3"
-      elif command -v pip >/dev/null 2>&1; then
-        PIP_CMD="pip"
-      else
-        echo "ERROR: Neither pip nor pip3 found"
-        exit 1
-      fi
-
-      echo "Using pip command: $PIP_CMD"
-
-      # Install packages
-      $PIP_CMD install --upgrade pip --quiet
-      $PIP_CMD install -r requirements.txt --target python --quiet --no-cache-dir
+      # Use pip3 directly
+      pip3 install --upgrade pip --quiet
+      pip3 install -r requirements.txt --target python --quiet --no-cache-dir
 
       # Verify packages were installed
       if [ ! -d "python" ] || [ -z "$(ls -A python)" ]; then
@@ -63,25 +46,18 @@ resource "null_resource" "create_layer" {
         exit 1
       fi
 
-      echo "Packages installed successfully. Cleaning up..."
-
-      # Remove unnecessary files
-      find python -name "*.pyc" -delete 2>/dev/null || true
-      find python -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
-
-      echo "Creating ZIP archive..."
+      echo "Packages installed successfully."
 
       # Create ZIP archive
       cd python && zip -r ../layer.zip . -q
 
-      # Verify ZIP was created and has content
-      if [ ! -f ../layer.zip ] || [ ! -s ../layer.zip ]; then
-        echo "ERROR: Failed to create layer.zip or it's empty"
-        ls -la ..
+      # Verify ZIP was created
+      if [ ! -f ../layer.zip ]; then
+        echo "ERROR: Failed to create layer.zip"
         exit 1
       fi
 
-      echo "Layer ZIP created successfully: $(du -h ../layer.zip)"
+      echo "Layer ZIP created successfully"
     EOT
   }
 
