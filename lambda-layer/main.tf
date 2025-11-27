@@ -14,7 +14,13 @@ resource "local_file" "requirements_txt" {
   filename = "${path.module}/requirements.txt"
 }
 
-# Install Python packages and create layer ZIP
+# Create initial dummy ZIP file (will be replaced by provisioner)
+resource "local_file" "layer_zip" {
+  content  = "dummy"
+  filename = "${path.module}/layer.zip"
+}
+
+# Install Python packages and replace the dummy ZIP
 resource "null_resource" "create_layer" {
   triggers = {
     requirements_hash = local.layer_id
@@ -24,52 +30,33 @@ resource "null_resource" "create_layer" {
   provisioner "local-exec" {
     working_dir = "${path.module}"
     command = <<-EOT
-      set -e  # Exit on any error
-      set -x  # Debug mode
+      set -e
 
-      echo "Working directory: $(pwd)"
+      echo "Creating layer in $(pwd)"
 
       # Clean up and recreate python directory
-      rm -rf python layer.zip
+      rm -rf python
       mkdir -p python
 
-      echo "Installing Python packages..."
-
-      # Use pip3 directly
-      pip3 install --upgrade pip --quiet
+      # Install packages
       pip3 install -r requirements.txt --target python --quiet --no-cache-dir
 
-      # Verify packages were installed
-      if [ ! -d "python" ] || [ -z "$(ls -A python)" ]; then
-        echo "ERROR: Python packages were not installed successfully"
-        ls -la
-        exit 1
-      fi
-
-      echo "Packages installed successfully."
-
-      # Create ZIP archive
+      # Create real ZIP archive
       cd python && zip -r ../layer.zip . -q
 
-      # Verify ZIP was created
-      if [ ! -f ../layer.zip ]; then
-        echo "ERROR: Failed to create layer.zip"
-        exit 1
-      fi
-
-      echo "Layer ZIP created successfully"
+      echo "Layer created successfully"
     EOT
   }
 
-  depends_on = [local_file.requirements_txt]
+  depends_on = [local_file.requirements_txt, local_file.layer_zip]
 }
 
-# Create the Lambda layer using the generated ZIP file
+# Create the Lambda layer
 resource "aws_lambda_layer_version" "layer" {
   layer_name               = local.layer_name
   compatible_runtimes      = var.compatible_runtimes
   compatible_architectures = var.architectures
-  filename                 = "${path.module}/layer.zip"
+  filename                 = local_file.layer_zip.filename
   source_code_hash         = null_resource.create_layer.id
 
   description  = var.description != "" ? var.description : "Python dependencies layer"
