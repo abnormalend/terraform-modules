@@ -20,14 +20,14 @@ resource "local_file" "create_layer_script" {
     #!/bin/bash
     set -e
 
-    echo "Creating Python layer..."
+    echo "Creating Python layer with minimal packages..."
 
     # Clean up
     rm -rf python
     mkdir -p python
 
-    # Install packages
-    pip3 install -r requirements.txt --target python --quiet --no-cache-dir
+    # Install just requests for testing
+    pip3 install requests --target python --quiet --no-cache-dir
 
     # Create ZIP
     cd python && zip -r ../layer.zip . -q
