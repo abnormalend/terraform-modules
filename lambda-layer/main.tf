@@ -14,13 +14,37 @@ resource "local_file" "requirements_txt" {
   filename = "${path.module}/requirements.txt"
 }
 
-# Create initial dummy ZIP file (will be replaced by provisioner)
+# Create shell script for layer creation
+resource "local_file" "create_layer_script" {
+  content = <<-EOF
+    #!/bin/bash
+    set -e
+
+    echo "Creating Python layer..."
+
+    # Clean up
+    rm -rf python
+    mkdir -p python
+
+    # Install packages
+    pip3 install -r requirements.txt --target python --quiet --no-cache-dir
+
+    # Create ZIP
+    cd python && zip -r ../layer.zip . -q
+
+    echo "Layer created successfully"
+  EOF
+
+  filename = "${path.module}/create_layer.sh"
+}
+
+# Create initial dummy ZIP file
 resource "local_file" "layer_zip" {
   content  = "dummy"
   filename = "${path.module}/layer.zip"
 }
 
-# Install Python packages and replace the dummy ZIP
+# Execute the layer creation script
 resource "null_resource" "create_layer" {
   triggers = {
     requirements_hash = local.layer_id
@@ -29,26 +53,10 @@ resource "null_resource" "create_layer" {
 
   provisioner "local-exec" {
     working_dir = "${path.module}"
-    command = <<-EOT
-      set -e
-
-      echo "Creating layer in $(pwd)"
-
-      # Clean up and recreate python directory
-      rm -rf python
-      mkdir -p python
-
-      # Install packages
-      pip3 install -r requirements.txt --target python --quiet --no-cache-dir
-
-      # Create real ZIP archive
-      cd python && zip -r ../layer.zip . -q
-
-      echo "Layer created successfully"
-    EOT
+    command     = "chmod +x create_layer.sh && ./create_layer.sh"
   }
 
-  depends_on = [local_file.requirements_txt, local_file.layer_zip]
+  depends_on = [local_file.requirements_txt, local_file.create_layer_script, local_file.layer_zip]
 }
 
 # Create the Lambda layer
