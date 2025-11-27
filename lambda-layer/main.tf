@@ -19,18 +19,29 @@ resource "local_file" "create_layer_script" {
   content = <<-EOF
     #!/bin/bash
     set -e
+    set -x
 
-    echo "Creating Python layer with minimal packages..."
+    echo "Starting layer creation script..."
+    echo "Current directory: $(pwd)"
+    echo "PATH: $PATH"
+    echo "Python version: $(python3 --version 2>&1)"
+    echo "Pip version: $(pip3 --version 2>&1)"
 
     # Clean up
     rm -rf python
     mkdir -p python
 
-    # Install just requests for testing
+    echo "Installing requests..."
     pip3 install requests --target python --quiet --no-cache-dir
+
+    echo "Verifying installation..."
+    ls -la python/
 
     # Create ZIP
     cd python && zip -r ../layer.zip . -q
+
+    echo "Verifying ZIP..."
+    ls -la ../layer.zip
 
     echo "Layer created successfully"
   EOF
