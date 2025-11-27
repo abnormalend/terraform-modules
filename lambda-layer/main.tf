@@ -24,12 +24,19 @@ resource "null_resource" "create_layer" {
   provisioner "local-exec" {
     command = <<-EOT
       set -e  # Exit on any error
+      set -x  # Debug mode
 
-      echo "Starting layer creation process..."
+      echo "Current working directory: $(pwd)"
+      echo "Path module: ${path.module}"
+
+      # Change to the module directory
+      cd ${path.module}
+
+      echo "Changed to directory: $(pwd)"
 
       # Clean up and recreate python directory
-      rm -rf ${path.module}/python ${path.module}/layer.zip
-      mkdir -p ${path.module}/python
+      rm -rf python layer.zip
+      mkdir -p python
 
       echo "Installing Python packages..."
 
@@ -45,35 +52,36 @@ resource "null_resource" "create_layer" {
 
       echo "Using pip command: $PIP_CMD"
 
-      # Install packages with more verbose output and retry logic
+      # Install packages
       $PIP_CMD install --upgrade pip --quiet
-      $PIP_CMD install -r ${path.module}/requirements.txt --target ${path.module}/python --quiet --no-cache-dir
+      $PIP_CMD install -r requirements.txt --target python --quiet --no-cache-dir
 
       # Verify packages were installed
-      if [ ! -d "${path.module}/python" ] || [ -z "$(ls -A ${path.module}/python)" ]; then
+      if [ ! -d "python" ] || [ -z "$(ls -A python)" ]; then
         echo "ERROR: Python packages were not installed successfully"
+        ls -la
         exit 1
       fi
 
       echo "Packages installed successfully. Cleaning up..."
 
       # Remove unnecessary files
-      find ${path.module}/python -name "*.pyc" -delete 2>/dev/null || true
-      find ${path.module}/python -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+      find python -name "*.pyc" -delete 2>/dev/null || true
+      find python -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 
       echo "Creating ZIP archive..."
 
       # Create ZIP archive
-      cd ${path.module}/python && zip -r ../layer.zip . -q
+      cd python && zip -r ../layer.zip . -q
 
       # Verify ZIP was created and has content
-      if [ ! -f ${path.module}/layer.zip ] || [ ! -s ${path.module}/layer.zip ]; then
+      if [ ! -f ../layer.zip ] || [ ! -s ../layer.zip ]; then
         echo "ERROR: Failed to create layer.zip or it's empty"
-        ls -la ${path.module}/
+        ls -la ..
         exit 1
       fi
 
-      echo "Layer ZIP created successfully: $(du -h ${path.module}/layer.zip)"
+      echo "Layer ZIP created successfully: $(du -h ../layer.zip)"
     EOT
   }
 
