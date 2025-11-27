@@ -23,25 +23,57 @@ resource "terraform_data" "create_layer" {
 
   provisioner "local-exec" {
     command = <<-EOT
+      set -e  # Exit on any error
+
+      echo "Starting layer creation process..."
+
       # Clean up and recreate python directory
       rm -rf ${path.module}/python ${path.module}/layer.zip
       mkdir -p ${path.module}/python
 
-      # Install packages
-      pip install -r ${path.module}/requirements.txt --target ${path.module}/python --quiet
+      echo "Installing Python packages..."
+
+      # Try multiple approaches for pip installation
+      if command -v pip3 >/dev/null 2>&1; then
+        PIP_CMD="pip3"
+      elif command -v pip >/dev/null 2>&1; then
+        PIP_CMD="pip"
+      else
+        echo "ERROR: Neither pip nor pip3 found"
+        exit 1
+      fi
+
+      echo "Using pip command: $PIP_CMD"
+
+      # Install packages with more verbose output and retry logic
+      $PIP_CMD install --upgrade pip --quiet
+      $PIP_CMD install -r ${path.module}/requirements.txt --target ${path.module}/python --quiet --no-cache-dir
+
+      # Verify packages were installed
+      if [ ! -d "${path.module}/python" ] || [ -z "$(ls -A ${path.module}/python)" ]; then
+        echo "ERROR: Python packages were not installed successfully"
+        exit 1
+      fi
+
+      echo "Packages installed successfully. Cleaning up..."
 
       # Remove unnecessary files
-      find ${path.module}/python -name "*.pyc" -delete
+      find ${path.module}/python -name "*.pyc" -delete 2>/dev/null || true
       find ${path.module}/python -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+
+      echo "Creating ZIP archive..."
 
       # Create ZIP archive
       cd ${path.module}/python && zip -r ../layer.zip . -q
 
       # Verify ZIP was created and has content
       if [ ! -f ${path.module}/layer.zip ] || [ ! -s ${path.module}/layer.zip ]; then
-        echo "Failed to create layer.zip or it's empty"
+        echo "ERROR: Failed to create layer.zip or it's empty"
+        ls -la ${path.module}/
         exit 1
       fi
+
+      echo "Layer ZIP created successfully: $(du -h ${path.module}/layer.zip)"
     EOT
   }
 
