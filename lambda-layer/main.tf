@@ -15,11 +15,11 @@ resource "local_file" "requirements_txt" {
 }
 
 # Install Python packages and create layer ZIP
-resource "terraform_data" "create_layer" {
-  triggers_replace = [
-    local.layer_id,
-    join(",", var.architectures)
-  ]
+resource "null_resource" "create_layer" {
+  triggers = {
+    requirements_hash = local.layer_id
+    architectures     = join(",", var.architectures)
+  }
 
   provisioner "local-exec" {
     command = <<-EOT
@@ -80,16 +80,16 @@ resource "terraform_data" "create_layer" {
   depends_on = [local_file.requirements_txt]
 }
 
-# Create the Lambda layer
+# Create the Lambda layer using the generated ZIP file
 resource "aws_lambda_layer_version" "layer" {
   layer_name               = local.layer_name
   compatible_runtimes      = var.compatible_runtimes
   compatible_architectures = var.architectures
   filename                 = "${path.module}/layer.zip"
-  source_code_hash         = local.layer_id
+  source_code_hash         = null_resource.create_layer.id
 
   description  = var.description != "" ? var.description : "Python dependencies layer"
   license_info = var.license_info
 
-  depends_on = [terraform_data.create_layer]
+  depends_on = [null_resource.create_layer]
 }
