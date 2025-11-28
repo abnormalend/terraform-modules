@@ -25,10 +25,10 @@ output "role_name" {
 
 output "log_group_name" {
   description = "Name of the CloudWatch log group for the Lambda function"
-  value       = aws_cloudwatch_log_group.lambda_log_group.name
+  value       = var.manage_log_group ? aws_cloudwatch_log_group.lambda_log_group[0].name : null
 }
 
 output "log_group_arn" {
   description = "ARN of the CloudWatch log group for the Lambda function"
-  value       = aws_cloudwatch_log_group.lambda_log_group.arn
+  value       = var.manage_log_group ? aws_cloudwatch_log_group.lambda_log_group[0].arn : null
 }

@@ -79,9 +79,15 @@ variable "vpc_config" {
 }
 
 variable "log_retention_days" {
-  description = "Number of days to retain Lambda function logs"
+  description = "CloudWatch log retention in days"
   type        = number
   default     = 14
+}
+
+variable "manage_log_group" {
+  description = "If true, create and manage the /aws/lambda/<name> log group. Set to false to let Lambda create it automatically."
+  type        = bool
+  default     = true
 }
 
 variable "tags" {

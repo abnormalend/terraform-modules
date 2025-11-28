@@ -1,10 +1,18 @@
 locals {
   lambda_name = var.name_prefix != null ? "${var.name_prefix}-${var.function_name}" : var.function_name
-  
+
   # Handle source directory packaging if provided
   create_package = var.source_dir != null
-  dist_dir = "${path.module}/dist"
-  filename = local.create_package ? "${local.dist_dir}/${local.lambda_name}.zip" : var.filename
+  dist_dir       = "${path.module}/dist"
+
+  # Compute a stable hash across all files in source_dir to force code updates on change
+  source_files = var.source_dir != null ? fileset(var.source_dir, "**") : []
+  # Exclude common noisy paths when hashing by filtering after fileset if desired
+  # (keep it simple for now; users can structure their source_dir appropriately)
+  source_hash  = var.source_dir != null ? sha1(join(",", [for f in local.source_files : filesha256("${var.source_dir}/${f}")])) : null
+
+  # Include hash in the zip filename so Terraform sees a new artifact when code changes
+  filename = local.create_package ? "${local.dist_dir}/${local.lambda_name}-${local.source_hash}.zip" : var.filename
 }
 
 # Ensure dist directory exists
@@ -81,9 +89,10 @@ resource "aws_lambda_function" "function" {
 }
 
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
+  count             = var.manage_log_group ? 1 : 0
   name              = "/aws/lambda/${aws_lambda_function.function.function_name}"
   retention_in_days = var.log_retention_days
-  tags             = var.tags
+  tags              = var.tags
 }
 
 resource "aws_iam_role" "lambda_role" {
