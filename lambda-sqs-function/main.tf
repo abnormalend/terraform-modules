@@ -37,6 +37,12 @@ module "lambda_function" {
   memory_size          = var.memory_size
   timeout              = var.timeout
   reserved_concurrent_executions = var.reserved_concurrent_executions
+  architectures        = var.architectures
+  vpc_config           = var.vpc_config
+  manage_log_group     = var.manage_log_group
+  log_retention_days   = var.log_retention_days
+  additional_policy_statements = var.additional_policy_statements
+  managed_policies     = var.managed_policies
   environment_variables = merge(
     var.environment_variables,
     {

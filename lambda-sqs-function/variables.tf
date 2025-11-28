@@ -61,6 +61,46 @@ variable "layers" {
   default     = []
 }
 
+# Pass-throughs to inner lambda-function module
+variable "manage_log_group" {
+  description = "If true, create and manage the Lambda log group; false to let Lambda create it."
+  type        = bool
+  default     = true
+}
+
+variable "log_retention_days" {
+  description = "CloudWatch log retention in days for the Lambda log group (only used when manage_log_group=true)."
+  type        = number
+  default     = 14
+}
+
+variable "architectures" {
+  description = "Instruction set architectures for the Lambda function (e.g., [\"arm64\"])."
+  type        = list(string)
+  default     = []
+}
+
+variable "vpc_config" {
+  description = "Optional VPC configuration for the Lambda function"
+  type = object({
+    subnet_ids         = list(string)
+    security_group_ids = list(string)
+  })
+  default = null
+}
+
+variable "additional_policy_statements" {
+  description = "Additional inline IAM policy statements to attach to the Lambda role"
+  type        = list(any)
+  default     = []
+}
+
+variable "managed_policies" {
+  description = "Additional IAM managed policy ARNs to attach to the Lambda role"
+  type        = list(string)
+  default     = []
+}
+
 variable "tags" {
   description = "Tags to attach to resources"
   type        = map(string)
