@@ -21,6 +21,12 @@ variable "python_packages" {
   default     = []
 }
 
+variable "source_dir" {
+  description = "Path to a directory that contains a 'python/' folder to be archived into the layer. If set, the module will build from this directory unless requirements_content/python_packages are provided."
+  type        = string
+  default     = ""
+}
+
 variable "runtime" {
   description = "Lambda runtime for the layer"
   type        = string
