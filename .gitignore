@@ -38,3 +38,13 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+
+# Lambda Layer contents (keep requirements, ignore built packages)
+lambda-layer/python/**
+!lambda-layer/requirements.txt
+!lambda-layer/python/.gitkeep
+
+# Generated zip artifacts (created by Terraform archive_file)
+lambda-layer/*.zip
+**/package*.zip
+**/layer*.zip

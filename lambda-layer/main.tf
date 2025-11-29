@@ -14,7 +14,7 @@ resource "aws_lambda_layer_version" "layer" {
   compatible_runtimes      = var.compatible_runtimes
   compatible_architectures = var.architectures
   filename                 = "/Users/brent/code/terraform-modules/lambda-layer/layer.zip"
-  source_code_hash         = "layer-v1"
+  source_code_hash         = "layer-v2-lxml"
 
   description  = var.description != "" ? var.description : "Python dependencies layer"
   license_info = var.license_info
