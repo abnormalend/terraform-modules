@@ -27,7 +27,7 @@ resource "null_resource" "pip_build" {
 
   provisioner "local-exec" {
     working_dir = local.build_dir
-    command     = "mkdir -p python && python3 -m pip install -r requirements.txt -t python --upgrade"
+    command     = "mkdir -p python && ${var.python_executable} -m pip install -r requirements.txt -t python --upgrade"
   }
 
   depends_on = [local_file.requirements]

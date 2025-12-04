@@ -30,7 +30,13 @@ variable "source_dir" {
 variable "runtime" {
   description = "Lambda runtime for the layer"
   type        = string
-  default     = "python3.11"
+  default     = "python3.13"
+}
+
+variable "python_executable" {
+  description = "Python executable to use for pip install (e.g., python3.13, python3.11)"
+  type        = string
+  default     = "python3.13"
 }
 
 variable "architectures" {
