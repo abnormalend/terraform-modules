@@ -119,3 +119,13 @@ variable "architectures" {
     error_message = "Architectures must be either 'x86_64' or 'arm64'."
   }
 }
+
+variable "tracing_mode" {
+  description = "X-Ray tracing mode for the Lambda function. Valid values are 'Active' or 'PassThrough'. Set to null to disable."
+  type        = string
+  default     = null
+  validation {
+    condition     = var.tracing_mode == null || contains(["Active", "PassThrough"], var.tracing_mode)
+    error_message = "tracing_mode must be 'Active', 'PassThrough', or null."
+  }
+}

@@ -79,6 +79,12 @@ resource "aws_lambda_function" "function" {
     }
   }
 
+  dynamic "tracing_config" {
+    for_each = var.tracing_mode != null ? [var.tracing_mode] : []
+    content {
+      mode = tracing_config.value
+    }
+  }
 
   tags = merge(
     var.tags,
@@ -139,4 +145,10 @@ resource "aws_iam_role_policy_attachment" "managed_policies" {
   count      = length(var.managed_policies) > 0 ? length(var.managed_policies) : 0
   role       = aws_iam_role.lambda_role.name
   policy_arn = var.managed_policies[count.index]
+}
+
+resource "aws_iam_role_policy_attachment" "xray" {
+  count      = var.tracing_mode != null ? 1 : 0
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
 }
